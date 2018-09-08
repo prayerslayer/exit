@@ -13,9 +13,17 @@ module.exports = {
   devServer: {
     contentBase: "./docs"
   },
-
+  resolve: {
+    extensions: [".wasm", ".mjs", ".js"]
+  },
   module: {
-    rules: [{ test: /\.png/, loader: "file-loader" }]
+    rules: [
+      {
+        test: /\.(png|json|tmx|tsx)/,
+        type: "javascript/auto", // Work around native webpack json handling
+        loader: "file-loader"
+      }
+    ]
   },
 
   plugins: [
