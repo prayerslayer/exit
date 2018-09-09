@@ -12,7 +12,8 @@
     "postbuild": "node postbuild.js"
   },
   "dependencies": {
-    "kontra": "^4.0.1"
+    "kontra": "^4.0.1",
+    "pathfinding": "^0.4.18"
   },
   "devDependencies": {
     "archiver": "^3.0.0",
