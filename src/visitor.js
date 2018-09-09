@@ -5,13 +5,23 @@ export const VisitorState = {
   Leaving: 2
 };
 
-export function getVisitor(k, size = 8) {
+function findFreeSpot(k, tileEngine) {
+  let x, y;
+  do {
+    x = Math.floor(Math.random() * k.canvas.width);
+    y = Math.floor(Math.random() * k.canvas.height);
+  } while (tileEngine.layerCollidesWith("wall", { x, y, width: 8, height: 8 }));
+  return { x, y };
+}
+
+export function getVisitor(k, tileEngine, size = 8) {
+  const { x, y } = findFreeSpot(k, tileEngine);
   return {
     width: size,
     height: size,
     speed: 1,
-    x: Math.floor(Math.random() * k.canvas.width), // starting x,y position of the sprite
-    y: Math.floor(Math.random() * k.canvas.height),
+    x,
+    y,
     color: "black", // fill color of the sprite rectangle,
     meta: {
       type: "visitor",
@@ -24,8 +34,8 @@ export function getVisitor(k, size = 8) {
     },
     ttl: Infinity,
     state: VisitorState.Moving,
-    dx: 2,
-    dy: 2,
+    dx: 1,
+    dy: 1,
     update: function() {
       const now = Date.now();
 
