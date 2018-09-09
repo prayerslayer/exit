@@ -13,23 +13,15 @@ export function range(n) {
 
 // COLLISION
 
-const WALL_TILE = 1;
-const DOOR_TILE = 5;
 function checkWallCollision(tileEngine, sprite) {
-  if (
-    tileEngine.layerCollidesWith("wall", sprite) &&
-    tileEngine.tileAtLayer("wall", sprite) === WALL_TILE
-  ) {
+  if (tileEngine.layerCollidesWith("wall", sprite)) {
     sprite.x = sprite.previously.x;
     sprite.y = sprite.previously.y;
   }
 }
 
 function checkDoorCollision(tileEngine, sprite) {
-  if (
-    tileEngine.layerCollidesWith("wall", sprite) &&
-    tileEngine.tileAtLayer("wall", sprite) === DOOR_TILE
-  ) {
+  if (tileEngine.layerCollidesWith("doors", sprite)) {
     if (sprite.meta.type === "player") {
       console.log("TODO load room"); // eslint-disable-line
     } else {

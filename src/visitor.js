@@ -38,7 +38,6 @@ export function getVisitor(k, tileEngine, size = 8) {
     dy: 1,
     update: function() {
       const now = Date.now();
-
       if (this.state === VisitorState.Moving) {
         if (now - this.meta.lastDirectionChange > seconds(5)) {
           const [dxFactor, dyFactor] = {
