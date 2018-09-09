@@ -1,17 +1,51 @@
 import "./lib/kontra";
-import { seconds, range } from "./util";
+import { seconds } from "./util";
 import { getTileEngine } from "./tileEngine";
 
 kontra.init();
 
 const PLAYER_SIZE = 8;
 
+const WALL_TILE = 1;
+const DOOR_TILE = 5;
+
+const VisitorState = {
+  Moving: 1,
+  Leaving: 2
+};
+
 getTileEngine(kontra).then(tileEngine => {
-  function resetIfColllides(sprite) {
-    if (tileEngine.layerCollidesWith("wall", sprite)) {
+  function checkWallCollision(sprite) {
+    if (
+      tileEngine.layerCollidesWith("wall", sprite) &&
+      tileEngine.tileAtLayer("wall", sprite) === WALL_TILE
+    ) {
       sprite.x = sprite.previously.x;
       sprite.y = sprite.previously.y;
     }
+  }
+
+  function checkDoorCollision(sprite) {
+    if (
+      tileEngine.layerCollidesWith("wall", sprite) &&
+      tileEngine.tileAtLayer("wall", sprite) === DOOR_TILE
+    ) {
+      if (sprite.meta.type === "player") {
+        console.log("TODO load room"); // eslint-disable-line
+      } else {
+        if (sprite.state !== VisitorState.Leaving) {
+          sprite.ttl = 0;
+          sprite.dx = 0;
+          sprite.dy = 0;
+        }
+        sprite.state = VisitorState.Leaving;
+      }
+    }
+  }
+
+  function checkCollision(sprite) {
+    checkWallCollision(sprite);
+    checkDoorCollision(sprite);
   }
 
   function updatePlayerPosition(k, player) {
@@ -30,8 +64,9 @@ getTileEngine(kontra).then(tileEngine => {
 
     player.x = desiredX;
     player.y = desiredY;
-    resetIfColllides(player);
+    checkCollision(player);
   }
+
   function getPlayer(k) {
     return k.sprite({
       width: PLAYER_SIZE,
@@ -52,7 +87,7 @@ getTileEngine(kontra).then(tileEngine => {
   }
 
   function getVisitor(k) {
-    return k.sprite({
+    return {
       width: PLAYER_SIZE,
       height: PLAYER_SIZE,
       speed: 1,
@@ -68,53 +103,53 @@ getTileEngine(kontra).then(tileEngine => {
         x: 0,
         y: 0
       },
+      ttl: Infinity,
+      state: VisitorState.Moving,
       dx: 2,
       dy: 2,
-      reset: {
-        // [property]: false | timestamp when to reset from previously field
-        dx: false,
-        dy: false
-      },
       update: function() {
         const now = Date.now();
 
-        Object.keys(this.reset).forEach(key => {
-          if (this.reset[key] && now - this.reset[key] > 0) {
-            this[key] = this.previously[key];
-            this.reset[key] = false;
+        if (this.state === VisitorState.Moving) {
+          if (now - this.meta.lastDirectionChange > seconds(5)) {
+            const [dxFactor, dyFactor] = {
+              0: [1, 0],
+              1: [0, 1],
+              2: [-1, 0],
+              3: [0, -1]
+            }[Math.floor(Math.random() * 4)];
+            this.dy = dyFactor * (this.dy === 0 ? this.speed : this.dy);
+            this.dx = dxFactor * (this.dx === 0 ? this.speed : this.dx);
+            this.meta.lastDirectionChange = now;
           }
-        });
 
-        if (now - this.meta.lastDirectionChange > seconds(5)) {
-          const [dxFactor, dyFactor] = {
-            0: [1, 0],
-            1: [0, 1],
-            2: [-1, 0],
-            3: [0, -1]
-          }[Math.floor(Math.random() * 4)];
-          this.dy = dyFactor * (this.dy === 0 ? this.speed : this.dy);
-          this.dx = dxFactor * (this.dx === 0 ? this.speed : this.dx);
-          this.meta.lastDirectionChange = now;
+          this.previously.x = this.x;
+          this.previously.y = this.y;
+          this.x += this.dx;
+          this.y += this.dy;
+          checkCollision(this);
         }
-
-        this.previously.x = this.x;
-        this.previously.y = this.y;
-        this.x += this.dx;
-        this.y += this.dy;
-        resetIfColllides(this);
       }
-    });
+    };
   }
 
-  let player = getPlayer(kontra);
-  let visitors = range(12).map(() => getVisitor(kontra));
+  let pool = kontra.pool({
+    create: kontra.sprite // create a new sprite every time the pool needs new objects
+  });
 
-  const sprites = [...visitors, player];
+  let player = getPlayer(kontra);
+
+  for (let i = 0; i < 12; i++) {
+    pool.get(getVisitor(kontra));
+  }
+
+  const sprites = [player];
 
   let loop = kontra.gameLoop({
     fps: 60,
     // create the main game loop
     update: function() {
+      pool.update();
       sprites.forEach(sprite => {
         sprite.update();
         if (sprite.x < 0) {
@@ -137,6 +172,7 @@ getTileEngine(kontra).then(tileEngine => {
     },
     render: function() {
       tileEngine.render();
+      pool.render();
       updatePlayerPosition(kontra, player);
       // render the game state
       sprites.forEach(sprite => sprite.render());
