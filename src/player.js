@@ -24,8 +24,8 @@ export function getPlayer(k, size = 8) {
     width: size,
     height: size,
     speed: 2,
-    x: size, // starting x,y position of the sprite
-    y: size,
+    x: size + 10, // starting x,y position of the sprite
+    y: size + 10,
     color: "red", // fill color of the sprite rectangle,
     meta: {
       type: "player"

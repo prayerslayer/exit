@@ -8,8 +8,8 @@ export const VisitorState = {
 function findFreeSpot(k, tileEngine) {
   let x, y;
   do {
-    x = Math.floor(Math.random() * k.canvas.width);
-    y = Math.floor(Math.random() * k.canvas.height);
+    x = Math.floor(Math.random() * 320);
+    y = Math.floor(Math.random() * 320);
   } while (tileEngine.layerCollidesWith("wall", { x, y, width: 8, height: 8 }));
   return { x, y };
 }
